@@ -5,7 +5,7 @@ disp(['HOLD SHIFT and select a (square) region approximately ' ...
 figure(1);
 imshow(im_b);
 rect_b = getrect(1);
-if ~(rect_b(3) == rect_b(4))
+if ~(abs(rect_b(3) - rect_b(4)) < 5)
     error('Please HOLD SHIFT when selecting region.');
 end
 disp(['HOLD SHIFT and select a (square) region approximately ' ...
@@ -13,7 +13,7 @@ disp(['HOLD SHIFT and select a (square) region approximately ' ...
 figure(2);
 imshow(im_o);
 rect_o = getrect(2);
-if ~(rect_o(3) == rect_o(4))
+if ~(abs(rect_o(3) - rect_o(4)) < 5)
     error('Please HOLD SHIFT when selecting region.');
 end
 if rect_b(3) < rect_o(3)

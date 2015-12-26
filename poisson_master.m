@@ -2,8 +2,8 @@
 
 % Set the value corresponding to the desired test(s) to true.
 RECONSTRUCT = false;
-SEAMLESS = false;
-MIXED  = true;
+SEAMLESS = true;
+MIXED  = false;
 
 if RECONSTRUCT 
     % Display original image for reference.
@@ -26,8 +26,8 @@ end
 if SEAMLESS
     % Roughly resize images so that desired overlapping regions are of
     % approximately the same size.
-    background = im2double(imread('./samples/monalisa.jpg'));
-    foreground = im2double(imread('./samples/john-cena.jpg'));
+    background = im2double(imread('./samples/tern.jpg'));
+    foreground = im2double(imread('./samples/paperboat.jpg'));
     [background, foreground] = resizeImage(background, foreground);
     close all;
     
@@ -48,8 +48,8 @@ end
 if MIXED
     % Roughly resize images so that overlapping regions are of
     % approximately the same size.
-    background = im2double(imread('./samples/monalisa.jpg'));
-    foreground = im2double(imread('./samples/john-cena.jpg'));
+    background = im2double(imread('./samples/wood.jpg'));
+    foreground = im2double(imread('./samples/charizard.jpg'));
     [background, foreground] = resizeImage(background, foreground);
     close all;
     

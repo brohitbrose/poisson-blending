@@ -1,5 +1,6 @@
 % Master script for using and testing the image blending algorithms.
 
+% Set the value corresponding to the desired test(s) to true.
 RECONSTRUCT = false;
 SEAMLESS = false;
 MIXED  = true;

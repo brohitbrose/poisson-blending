@@ -1,3 +1,5 @@
+% Master script for using and testing the image blending algorithms.
+
 RECONSTRUCT = false;
 SEAMLESS = false;
 MIXED  = true;

@@ -2,8 +2,8 @@
 
 % Set the value corresponding to the desired test(s) to true.
 RECONSTRUCT = false;
-SEAMLESS = true;
-MIXED  = false;
+SEAMLESS = false;
+MIXED  = true;
 
 if RECONSTRUCT 
     % Display original image for reference.
@@ -49,7 +49,7 @@ if MIXED
     % Roughly resize images so that overlapping regions are of
     % approximately the same size.
     background = im2double(imread('./samples/wood.jpg'));
-    foreground = im2double(imread('./samples/charizard.jpg'));
+    foreground = im2double(imread('./samples/monalisa.jpg'));
     [background, foreground] = resizeImage(background, foreground);
     close all;
     
@@ -66,7 +66,7 @@ if MIXED
     im_blend = blend(fore, mask, background, 'mixed');
     
     % Set to true if only the blended region is desired.
-    texture = false;
+    texture = true;
     if (texture)
         im_blend = cat(3, im_blend(:,:,1) .* mask, ...
             im_blend(:,:,2) .* mask, ...

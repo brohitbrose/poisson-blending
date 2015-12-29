@@ -1,8 +1,12 @@
+close all;
+clear;
+clc;
+
 % Master script for using and testing the image blending algorithms.
 
 % Set the value corresponding to the desired test(s) to true.
 RECONSTRUCT = false;
-SEAMLESS = false;
+SEAMLESS = true;
 MIXED  = true;
 
 if RECONSTRUCT 
@@ -26,8 +30,8 @@ end
 if SEAMLESS
     % Roughly resize images so that desired overlapping regions are of
     % approximately the same size.
-    background = im2double(imread('./samples/tern.jpg'));
-    foreground = im2double(imread('./samples/paperboat.jpg'));
+    background = im2double(imread('./samples/monalisa.jpg'));
+    foreground = im2double(imread('./samples/john-cena.jpg'));
     [background, foreground] = resizeImage(background, foreground);
     close all;
     
@@ -41,7 +45,9 @@ if SEAMLESS
      [fore, mask] = alignSource(foreground, objmask, background);
 
     % Perform seamless cloning of foreground onto background.
+    tic
     im_blend = blend(fore, mask, background, 'poisson');
+    toc
     figure(10), hold off, imshow(im_blend)
 end
 
@@ -55,6 +61,8 @@ if MIXED
     
     % Interactively create a binary mask of the foreground image. True only
     % inside the user-inputted polygon.
+    % TODO: due to the nature of mixed-blending images, give an option for
+    % rectangular selection in addition to the default free-form select.
     disp(['Choose vertices corresponding to the polygon containing ' ...
         'foreground region of interest.']);
     objmask = roipoly(foreground);

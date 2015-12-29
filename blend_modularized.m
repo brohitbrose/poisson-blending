@@ -1,4 +1,4 @@
-function im_blend = blend(fore, mask, background, method)
+function im_blend = blend_modularized(fore, mask, background, method)
 % im_blend = blend(im_s, mask_s, im_background, method);
 % Merges im_s with im_background in accordance with mask_s into im_blend.
 % The nature of the boundary conditions is determined by method.
@@ -99,26 +99,26 @@ for j=1:bw
     for i=1:bh
         % If outside mask_s, set final values to background values.
         if (~mask(i,j))
-            A_normal_rows(norm_index) = norm_index;
-            A_normal_cols(norm_index) = im2var(i,j);
-            A_normal_vals(norm_index) = 1;
-            b_normal(norm_index) = back(i,j);
+            [A_normal_rows, A_normal_cols, A_normal_vals, b_normal] = ...
+                addNormal(A_normal_rows, A_normal_cols, A_normal_vals, ...
+                b_normal,norm_index,im2var(i,j),back(i,j));
             norm_index = norm_index + 1;
             % Then check whether neighbors in the positive x- and y-
             % directions lie inside mask_s.
             if ((j+1 <= bw) && mask(i,j+1))
-                A_outer_rows(outer_index) = outer_index;
-                A_outer_cols(outer_index) = im2var(i,j+1);
-                A_outer_vals(outer_index) = 1;
                 d = fore(i,j+1)-fore(i,j);
-                b_outer(outer_index) = d + back(i,j);
+                [A_outer_rows, A_outer_cols, A_outer_vals, b_outer] = ...
+                    addOuter(A_outer_rows, A_outer_cols, ... 
+                    A_outer_vals, b_outer, outer_index, im2var(i,j+1), ... 
+                    back(i,j), d);
                 outer_index = outer_index + 1;
-            elseif ((i+1 <= bh) && mask(i+1,j))
-                A_outer_rows(outer_index) = outer_index;
-                A_outer_cols(outer_index) = im2var(i+1,j);
-                A_outer_vals(outer_index) = 1;
+            end
+            if ((i+1 <= bh) && mask(i+1,j))
                 d = fore(i+1,j)-fore(i,j);
-                b_outer(outer_index) = d + back(i,j);
+                [A_outer_rows, A_outer_cols, A_outer_vals, b_outer] = ...
+                    addOuter(A_outer_rows, A_outer_cols, ... 
+                    A_outer_vals, b_outer, outer_index, im2var(i+1,j), ...
+                    back(i,j), d);
                 outer_index = outer_index + 1;
             end
         
@@ -127,46 +127,36 @@ for j=1:bw
         else
             % Handle x-gradient
             if (mask(i,j+1))
-                t = (source_index + 1) ./ 2;
-                A_source_rows(source_index) = t;
-                A_source_cols(source_index) = im2var(i,j);
-                A_source_vals(source_index) = 1;
-                d = fore(i,j)-fore(i,j+1);
-                b_source(t) = d;
-                t = source_index + 1;               
-                A_source_rows(t) = A_source_rows(source_index);
-                A_source_cols(t) = im2var(i,j+1);
-                A_source_vals(t) = -1;
-                source_index = t + 1;
+                 d = fore(i,j)-fore(i,j+1);
+                [A_source_rows, A_source_cols, A_source_vals, b_source] = ...
+                    addSource(A_source_rows, A_source_cols, ...
+                    A_source_vals,b_source,source_index,im2var(i,j),...
+                    im2var(i,j+1),d);
+                source_index = source_index + 2;
             else
-                A_border_rows(border_index) = border_index;
-                A_border_cols(border_index) = im2var(i,j);
-                A_border_vals(border_index) = 1;
-                d = fore(i,j)-fore(i,j+1);
-                b_border(border_index) = d+back(i,j+1);
+                d = fore(i,j) - fore(i,j+1);
+                [A_border_rows, A_border_cols, A_border_vals, b_border] = ...
+                    addBorder(A_border_rows, A_border_cols, ... 
+                    A_border_vals,b_border,border_index,im2var(i,j),...
+                    back(i,j+1),d);
                 border_index = border_index + 1;
             end
             
             % Handle y-gradient
             if (mask(i+1,j))
-                t = (source_index + 1) ./ 2;
-                A_source_rows(source_index) = t;
-                A_source_cols(source_index) = im2var(i,j);
-                A_source_vals(source_index) = 1;
                 d = fore(i,j)-fore(i+1,j);
-                b_source(t) = d;
-                t = source_index + 1;
-                A_source_rows(t) = A_source_rows(source_index);
-                A_source_cols(t) = im2var(i+1,j);
-                A_source_vals(t) = -1;
-                source_index = t + 1;
+                [A_source_rows, A_source_cols, A_source_vals, b_source] = ...
+                    addSource(A_source_rows, A_source_cols, ...
+                    A_source_vals,b_source,source_index,im2var(i,j),...
+                    im2var(i+1,j),d);
+               source_index = source_index + 2;
             else
-                A_border_rows(border_index) = border_index;
-                A_border_cols(border_index) = im2var(i,j);
-                A_border_vals(border_index) = 1;
-                d = fore(i,j)-fore(i+1,j);
-                b_border(border_index) = d+back(i+1,j);
-                border_index = border_index + 1; 
+                d = fore(i,j) - fore(i+1,j);
+                [A_border_rows, A_border_cols, A_border_vals, b_border] = ...
+                    addBorder(A_border_rows, A_border_cols, ... 
+                    A_border_vals,b_border,border_index,im2var(i,j),...
+                    back(i+1,j),d);
+                    border_index = border_index + 1; 
             end
         end
     end
@@ -223,10 +213,6 @@ function [A,b] = get_Ab_mixed(fore, mask, back)
 im2var = zeros(bh, bw);
 im2var(1:bh*bw) = 1:bh*bw;
 
-% The resulting A matrix will be extremely sparse. To preserve memory while
-% optimizing speed, we determine the indices and values of nonzero A
-% entries in advance and set them with a single call to sparse().
-
 % Equations that directly copy background pixels to output pixels.
 A_normal_rows = zeros(1,bh*bw);
 A_normal_cols = zeros(1,bh*bw);
@@ -262,28 +248,28 @@ for j=1:bw
     for i=1:bh
         % If outside mask_s, set final values to background values.
         if (~mask(i,j))
-            A_normal_rows(norm_index) = norm_index;
-            A_normal_cols(norm_index) = im2var(i,j);
-            A_normal_vals(norm_index) = 1;
-            b_normal(norm_index) = back(i,j);
+            [A_normal_rows, A_normal_cols, A_normal_vals, b_normal] = ...
+                addNormal(A_normal_rows, A_normal_cols, A_normal_vals, ...
+                b_normal,norm_index,im2var(i,j),back(i,j));
             norm_index = norm_index + 1;
             % Then check whether neighbors in the positive x- and y-
             % directions lie inside mask_s.
             if ((j+1 <= bw) && mask(i,j+1))
-                A_outer_rows(outer_index) = outer_index;
-                A_outer_cols(outer_index) = im2var(i,j+1);
-                A_outer_vals(outer_index) = 1;
-                d = getMaxMag(fore(i,j), fore(i,j+1), back(i,j), ...
+                d = getMaxMag(fore(i,j), fore(i,j+1), back(i,j), ... 
                     back(i,j+1));
-                b_outer(outer_index) = d + back(i,j);
+                [A_outer_rows, A_outer_cols, A_outer_vals, b_outer] = ...
+                    addOuter(A_outer_rows, A_outer_cols, ... 
+                    A_outer_vals, b_outer, outer_index, im2var(i,j+1), ...
+                    back(i,j), d);
                 outer_index = outer_index + 1;
-            elseif ((i+1 <= bh) && mask(i+1,j))
-                A_outer_rows(outer_index) = outer_index;
-                A_outer_cols(outer_index) = im2var(i+1,j);
-                A_outer_vals(outer_index) = 1;
+            end
+            if ((i+1 <= bh) && mask(i+1,j))
                 d = getMaxMag(fore(i,j), fore(i+1,j), back(i,j), ...
-                    back(i+1,j)); 
-                b_outer(outer_index) = d + back(i,j);
+                    back(i+1,j));
+                [A_outer_rows, A_outer_cols, A_outer_vals, b_outer] = ...
+                    addOuter(A_outer_rows, A_outer_cols, ... 
+                    A_outer_vals, b_outer, outer_index, im2var(i+1,j), ...
+                    back(i,j), d);
                 outer_index = outer_index + 1;
             end
         
@@ -292,57 +278,44 @@ for j=1:bw
         else
             % Handle x-gradient
             if (mask(i,j+1))
-                t = (source_index + 1) ./ 2;
-                A_source_rows(source_index) = t;
-                A_source_cols(source_index) = im2var(i,j);
-                A_source_vals(source_index) = 1;
-                d = getMaxMag(fore(i,j+1),fore(i,j), ...
-                    back(i,j+1),back(i,j));
-                b_source(t) = d;
-                t = source_index + 1;               
-                A_source_rows(t) = A_source_rows(source_index);
-                A_source_cols(t) = im2var(i,j+1);
-                A_source_vals(t) = -1;
-                source_index = t + 1;
+                 d = getMaxMag(fore(i,j+1), fore(i,j), back(i,j+1),...
+                     back(i,j));
+                [A_source_rows, A_source_cols, A_source_vals, b_source] = ...
+                    addSource(A_source_rows, A_source_cols, ...
+                    A_source_vals,b_source,source_index,im2var(i,j),...
+                    im2var(i,j+1),d);
+                source_index = source_index + 2;
             else
-                A_border_rows(border_index) = border_index;
-                A_border_cols(border_index) = im2var(i,j);
-                A_border_vals(border_index) = 1;
-                d = getMaxMag(fore(i,j+1),fore(i,j), ...
-                    back(i,j+1),back(i,j));
-                b_border(border_index) = d+back(i,j+1);
+                d = getMaxMag(fore(i,j+1), fore(i,j), back(i,j+1), ...
+                    back(i,j));
+                [A_border_rows, A_border_cols, A_border_vals, b_border] = ...
+                    addBorder(A_border_rows, A_border_cols, ... 
+                    A_border_vals,b_border,border_index,im2var(i,j),...
+                    back(i,j+1),d);
                 border_index = border_index + 1;
             end
             
             % Handle y-gradient
             if (mask(i+1,j))
-                t = (source_index + 1) ./ 2;
-                A_source_rows(source_index) = t;
-                A_source_cols(source_index) = im2var(i,j);
-                A_source_vals(source_index) = 1;
-                d = getMaxMag(fore(i+1,j),fore(i,j), ...
-                    back(i+1,j),back(i,j));
-                b_source(t) = d;
-                t = source_index + 1;
-                A_source_rows(t) = A_source_rows(source_index);
-                A_source_cols(t) = im2var(i+1,j);
-                A_source_vals(t) = -1;
-                source_index = t + 1;
+                d = getMaxMag(fore(i+1,j), fore(i,j), back(i+1,j), ...
+                    back(i,j));
+                [A_source_rows, A_source_cols, A_source_vals, b_source] = ...
+                    addSource(A_source_rows, A_source_cols, ...
+                    A_source_vals,b_source,source_index,im2var(i,j),im2var(i+1,j),d);
+               source_index = source_index + 2;
             else
-                A_border_rows(border_index) = border_index;
-                A_border_cols(border_index) = im2var(i,j);
-                A_border_vals(border_index) = 1;
-                d = getMaxMag(fore(i+1,j),fore(i,j), ...
-                    back(i+1,j),back(i,j));
-                b_border(border_index) = d+back(i+1,j);
+                d = getMaxMag(fore(i+1,j),fore(i,j), back(i+1,j), ...
+                    back(i,j));
+                [A_border_rows, A_border_cols, A_border_vals, b_border] = ...
+                    addBorder(A_border_rows, A_border_cols, ... 
+                    A_border_vals,b_border,border_index,im2var(i,j),back(i+1,j),d);
                 border_index = border_index + 1; 
             end
         end
     end
 end
 
-% Having generously initialized arrays in order to prevent resizing inside
-% memory, we now strip trailing zeros.
+% Strip trailing zeros.
 n = norm_index-1;
 A_normal_rows = A_normal_rows(1:n);
 A_normal_cols = A_normal_cols(1:n);
@@ -382,13 +355,53 @@ b = b';
 
 end
 
+function [nr, nc, nv, nb] = addNormal(nr,nc,nv,nb,ni,col,bval)
+
+nr(ni) = ni;
+nc(ni) = col;
+nv(ni) = 1;
+nb(ni) = bval;
+
+end
+
+function [or, oc, ov, ob] = addOuter(or,oc,ov,ob,oi,col,bval,d)
+
+or(oi) = oi;
+oc(oi) = col;
+ov(oi) = 1;
+ob(oi) = bval+d;
+
+end
+
+function [sr, sc, sv, sb] = addSource(sr,sc,sv,sb,si,col,col1,d)
+
+t = (si+1) ./ 2;
+sr(si) = t;
+sc(si) = col;
+sv(si) = 1;
+sb(t) = d;
+si1 = si+1;
+sr(si1) = sr(si);
+sc(si1) = col1;
+sv(si1) = -1;
+
+end
+
+function [br,bc,bv,bb] = addBorder(br,bc,bv,bb,bi,col,bval,d)
+
+br(bi) = bi;
+bc(bi) = col;
+bv(bi) = 1;
+bb(bi) = bval+d;
+
+end
+
 function d = getMaxMag(a1,a2,b1,b2)
-d1 = a2 - a1;
-d2 = b2 - b1;
-if abs(d1) > abs(d2)
-    d = d1;
+
+if abs(a2-a1) > abs(b2-b1)
+    d = a2-a1;
 else
-    d = d2;
+    d = b2-b1;
 end
 
 end

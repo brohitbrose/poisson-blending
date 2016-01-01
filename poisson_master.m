@@ -6,8 +6,8 @@ clc;
 
 % Set the value corresponding to the desired test(s) to true.
 RECONSTRUCT = false;
-SEAMLESS = false;
-MIXED  = true;
+SEAMLESS = true;
+MIXED  = false;
 
 if RECONSTRUCT 
     % Display original image for reference.
